@@ -157,7 +157,7 @@ def iteration_loop(psi_start, omega, dz_hat, sigma_hat, rho_hat, eps,
     return psi
 
 
-def showData(zz, psi, pmf_an, pmf_cat, c_0, beta, valency, sigma_hat):
+def showData(zz, psi, pmf_an, pmf_cat, c_0, beta, valency, sigma_hat, plot=False):
     """
     Plots and prints computed data if in verbose mode.
     """
@@ -180,7 +180,15 @@ def showData(zz, psi, pmf_an, pmf_cat, c_0, beta, valency, sigma_hat):
     symm_dens_p = np.concatenate((rho_ion_p, rho_ion_p[::-1]))
     symm_dens_n = np.concatenate((rho_ion_n, rho_ion_n[::-1]))
     symm_zz = np.concatenate((zz, zz+zz[-1]))
+    # make and show plot
+    if plot:
+        make_plot(symm_zz, symm_psi, symm_dens_n, symm_dens_p)
 
+    return symm_zz, symm_psi, symm_dens_n, symm_dens_p
+
+
+def make_plot(symm_zz, symm_psi, symm_dens_n, symm_dens_p):
+    """Make plot of computed data."""
     # plot data, potential first
     plt.plot(symm_zz, symm_psi, 'k-')
     plt.xlabel('z-distance [nm]')
@@ -195,28 +203,21 @@ def showData(zz, psi, pmf_an, pmf_cat, c_0, beta, valency, sigma_hat):
     plt.show()
 
 
-def saveData(zz, psi, pmf_an, pmf_cat, c_0, kappa, beta, valency, path_out):
+def saveData(symm_zz, symm_psi, symm_dens_n, symm_dens_p, c_0, kappa, path_out):
     """
     Saves computed data to supplied path.
     """
-
-    # compute ion densities from potential and pmfs
-    dens_neg = 1E-27*c_0*np.exp(psi-pmf_an)  # anion density in nm^-3
-    dens_pos = 1E-27*c_0*np.exp(-psi-pmf_cat)  # cation density in nm^-3
-    # convert psi to physical units [mV]
-    psi_to_phi = 1E3/(sc.elementary_charge*valency*beta)
-
     head_dens = (("density for bulk concentration c_0 = %.2f mol/l\n"
                   % (1E-3*c_0/sc.Avogadro)) +
                  "col 1: z-distance [nm]\ncol 2: density [1/nm^3]\n")
     head_psi = (("electrostatic potential for l_debye = %.2f nm\n" % (1E9/kappa)) +
                 "col 1: z-distance [nm]\ncol 2: potential [mV]\n")
 
-    np.savetxt(path_out+'/dens_neg.txt', np.c_[zz, dens_neg],
+    np.savetxt(path_out+'/dens_neg.txt', np.c_[symm_zz, symm_dens_n],
                header='anion '+head_dens)
-    np.savetxt(path_out+'/dens_pos.txt', np.c_[zz, dens_pos],
+    np.savetxt(path_out+'/dens_pos.txt', np.c_[symm_zz, symm_dens_p],
                header='cation '+head_dens)
-    np.savetxt(path_out+'/psi.txt', np.c_[zz, psi*psi_to_phi], header=head_psi)
+    np.savetxt(path_out+'/psi.txt', np.c_[symm_zz, symm_psi], header=head_psi)
 ##########################################################################
 
 
@@ -240,11 +241,12 @@ def main():
     # call iteration procedure
     psi = iteration_loop(psi_start, omega, dz_hat, sigma_hat, rho_hat, eps,
                          pmf_cat, pmf_an)
-    if verb:  # plot and print data if in verbos mode
-        showData(zz, psi, pmf_an, pmf_cat, c_0, beta, valency, sigma_hat)
+    (symm_zz, symm_psi,  # compute physical data and plot if in verbos mode
+     symm_dens_n, symm_dens_p) = showData(zz, psi, pmf_an, pmf_cat, c_0, beta,
+                                          valency, sigma_hat, plot=verb)
 
     # save computed potential and ion distributions
-    saveData(zz, psi, pmf_an, pmf_cat, c_0, kappa, beta, valency, path_out)
+    saveData(symm_zz, symm_psi, symm_dens_n, symm_dens_p, c_0, kappa, path_out)
 
 
 if __name__ == "__main__":
