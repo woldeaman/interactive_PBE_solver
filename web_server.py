@@ -95,7 +95,7 @@ def update_data():
 # set up and initiallize widgets
 bins = Slider(title="bins", value=100, start=50, end=250, step=10)
 temp = Slider(title="temperatur [K]", value=300, start=0, end=500, step=10)
-dist = Slider(title="distance [nm]", value=1.0, start=0.1, end=10, step=0.1)
+dist = Slider(title="distance [nm]", value=5, start=0.1, end=10, step=0.1)
 valency = Slider(title="valency", value=1, start=1, end=4, step=1)
 sigma = Slider(title="surface charge [e/nm\u00b2]", value=0, start=-5, end=5, step=0.1)
 c_0 = Slider(title="ion concentration [mol/l]", value=1, start=1, end=5, step=0.1)
