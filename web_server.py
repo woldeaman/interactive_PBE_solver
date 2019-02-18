@@ -51,7 +51,8 @@ def initialize_data():
     chrg, eps, pmf_cat, pmf_an = np.zeros(bins.value), np.ones(bins.value)*80, np.zeros(bins.value), np.zeros(bins.value)
     global chrg_dat, eps_dat, pmf_dat
     chrg_dat, eps_dat = ColumnDataSource(data=dict(xs=[zz_half], ys=[chrg])), ColumnDataSource(data=dict(xs=[zz_half], ys=[eps]))
-    pmf_dat = ColumnDataSource(data=dict(xs=[zz_half, zz_half], ys=[pmf_cat, pmf_an]))
+    pmf_dat = ColumnDataSource(data=dict(xs=[zz_half, zz_half], ys=[pmf_cat, pmf_an],
+                                         colors=['red', 'blue']))
 
 
 def build_figures():
@@ -76,13 +77,19 @@ def build_figures():
 
     # create plots
     potential.line('x', 'y0', source=total_data, color='black', line_width=3)
-    dens.line('x', 'y1', source=total_data, color='red', legend='Cation Concentration', line_width=3)
-    dens.line('x', 'y2', source=total_data, color='blue', legend='Anion Concentration', line_width=3)
+    dens.line('x', 'y1', source=total_data, color='red', legend='Cation Concentration',
+              muted_color='red', muted_alpha=0.2, line_width=3)
+    dens.line('x', 'y2', source=total_data, color='blue', legend='Anion Concentration',
+              muted_color='blue', muted_alpha=0.2, line_width=3)
+    dens.legend.location = "top_center"
+    dens.legend.click_policy = "mute"  # make density transparent on click
+
     # set up figures with drawing tools
     for fig, dat in zip([charge, epsilon], [chrg_dat, eps_dat]):
         plt = fig.multi_line(xs='xs', ys='ys', source=dat, color='black', line_width=3)
         draw_tool = FreehandDrawTool(renderers=[plt], num_objects=1)
         fig.add_tools(draw_tool)
+    # TODO: implement different colors and legend for pmfs
     pmf_plt = pmfs.multi_line(xs='xs', ys='ys', source=pmf_dat, line_width=3)
     draw_tool_p = FreehandDrawTool(renderers=[pmf_plt], num_objects=2)
     pmfs.add_tools(draw_tool_p)
@@ -131,7 +138,8 @@ def interpolate_free_draw_data():
         pmf_spls.append(ip.UnivariateSpline(xx_unq[xx_unq.argsort()],
                                             np.array(yy)[idx_unq][xx_unq.argsort()],
                                             s=0, k=1, ext='const'))
-    pmf_dat.data = dict(xs=[zz]*2, ys=[pmf_spls[i](zz) for i in range(2)])
+    pmf_dat.data = dict(xs=[zz]*2, ys=[pmf_spls[i](zz) for i in range(2)],
+                        colors=current_pmf_dat['colors'])
 
 
 def update_data():
