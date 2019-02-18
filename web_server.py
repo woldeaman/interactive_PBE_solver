@@ -14,7 +14,7 @@ from bokeh.plotting import figure
 ##################
 #   ENVIRONMENT  #
 ##########################################################################
-nm_3_to_mols = 1E24/sc.Avogadro  # from nm^3 to mol/l
+nm_3_to_mols = 1E24/sc.Avogadro  # from 1/nm^3 to mol/l
 ##########################################################################
 
 
