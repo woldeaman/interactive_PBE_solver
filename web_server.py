@@ -4,11 +4,10 @@ import pbe_solver.pbe_solver as pbe  # this needs to be installed beforehand
 import scipy.constants as sc
 import scipy.interpolate as ip
 from bokeh.io import curdoc
-from bokeh.models.layouts import WidgetBox, Row, Column
 from bokeh.layouts import layout
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, FreehandDrawTool, Legend, LegendItem, Span
+from bokeh.models.layouts import WidgetBox, Row, Column
 from bokeh.models.widgets import Slider, Button
-from bokeh.models import FreehandDrawTool
 from bokeh.plotting import figure
 
 ##################
@@ -59,21 +58,26 @@ def build_figures():
     """Create figures."""
     tools = "pan,wheel_zoom,box_zoom,reset,save,box_select,lasso_select"
     global potential
-    potential = figure(plot_height=800, plot_width=800, title="electrostatic potential", tools=tools,
+    potential = figure(plot_height=800, plot_width=800, title="Electrostatic Potential", tools=tools,
                        x_axis_label='z-distance [nm]', y_axis_label='\u03C6(z) [mV]')
     global dens
-    dens = figure(plot_height=800, plot_width=800, title="ion concentration", x_range=potential.x_range,  # linking plots together in x-axis
+    dens = figure(plot_height=800, plot_width=800, title="Ion Concentration", x_range=potential.x_range,  # linking plots together in x-axis
                   x_axis_label='z-distance [nm]', y_axis_label='c(z) [mol/l]', tools=tools)
+    for fig in [potential, dens]:  # make titles a little nicer
+        fig.title.text_font_size = '15pt'
+        fig.title.text_font_style = 'italic'
+        fig.title.align = 'center'
+
     # create drawing plots for charge, epsilon and pmfs
     global charge
     charge = figure(plot_width=300, plot_height=155, y_axis_label='\u03C1(z) [e/m\u00B3]',
                     tools='pan,ywheel_zoom,save', y_range=(-2, 2))
     global epsilon
     epsilon = figure(plot_width=300, plot_height=155, x_range=charge.x_range, y_axis_label='\u03B5(z)',
-                     tools='pan,ywheel_zoom,save', y_range=(0, 100))
+                     tools='pan,ywheel_zoom,save', y_range=(-5, 100))
     global pmfs
     pmfs = figure(plot_width=300, plot_height=185, x_range=charge.x_range, x_axis_label='z-distance [nm]',
-                  y_axis_label='PMF(z) [k\u0299T]', tools='pan,ywheel_zoom,save', y_range=(-10, 10))
+                  y_axis_label='PMF(z) [k\u0299T]', tools='pan,ywheel_zoom,save', y_range=(-7.5, 7.5))
 
     # create plots
     potential.line('x', 'y0', source=total_data, color='black', line_width=3)
@@ -89,11 +93,33 @@ def build_figures():
         plt = fig.multi_line(xs='xs', ys='ys', source=dat, color='black', line_width=3)
         draw_tool = FreehandDrawTool(renderers=[plt], num_objects=1)
         fig.add_tools(draw_tool)
-    # TODO: implement different colors and legend for pmfs
-    pmf_plt = pmfs.multi_line(xs='xs', ys='ys', source=pmf_dat, line_width=3)
+        fig.toolbar.active_drag = draw_tool
+    # indicating zero charge line
+    zero_chrg = Span(location=0, dimension='width', line_dash='dotted', line_color='black',
+                     line_width=1)
+    charge.add_layout(zero_chrg)
+    # indicate water and vacuum epsilon values
+    water_eps = Span(location=80, dimension='width', line_dash='dotted', line_color='blue',
+                     line_width=1)
+    vac_eps = Span(location=1, dimension='width', line_dash='dotted', line_color='black',
+                   line_width=1)
+    epsilon.add_layout(water_eps)
+    epsilon.add_layout(vac_eps)
+    # TODO: different colors for lines mess up while drawing...
+    pmf_plt = pmfs.multi_line(xs='xs', ys='ys', line_color='colors', source=pmf_dat,
+                              line_width=3)
     draw_tool_p = FreehandDrawTool(renderers=[pmf_plt], num_objects=2)
     pmfs.add_tools(draw_tool_p)
     pmfs.toolbar.active_drag = draw_tool_p
+    # indicate zero energy line
+    zero_pmf = Span(location=0, dimension='width', line_dash='dotted', line_color='black', line_width=1)
+    pmfs.add_layout(zero_pmf)
+    # make legend
+    legend = Legend(items=[LegendItem(label="PMF\u207A", renderers=[pmf_plt], index=0),
+                           LegendItem(label="PMF\u207B", renderers=[pmf_plt], index=1)])
+    pmfs.add_layout(legend)
+    pmfs.legend.location = "top_center"
+    pmfs.legend.label_text_font_size = "5pt"
 
 
 def solver(bins, temp, distance, valency, sigma, c_0_pre, rho, eps, pmf_cat, pmf_an):
@@ -139,7 +165,7 @@ def interpolate_free_draw_data():
                                             np.array(yy)[idx_unq][xx_unq.argsort()],
                                             s=0, k=1, ext='const'))
     pmf_dat.data = dict(xs=[zz]*2, ys=[pmf_spls[i](zz) for i in range(2)],
-                        colors=current_pmf_dat['colors'])
+                        colors=['red', 'blue'])
 
 
 def update_data():
