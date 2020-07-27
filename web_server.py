@@ -28,8 +28,10 @@ def initialize_widgets():
     temp = Slider(title="Temperatur [K]", value=300, start=0, end=500, step=10)
     global dist
     dist = Slider(title="Distance [nm]", value=5, start=0.1, end=10, step=0.1)
-    global valency
-    valency = Slider(title="Ion Valency", value=1, start=1, end=4, step=1)
+    global valency_cat
+    valency_cat = Slider(title="Ion Valency [Cations]", value=1, start=1, end=4, step=1)
+    global valency_an
+    valency_an = Slider(title="Ion Valency [Anions]", value=1, start=1, end=4, step=1)
     global sigma
     sigma = Slider(title="Surface Charge [e/nm\u00b2]", value=0, start=-5, end=5, step=0.1)
     global c_0
@@ -122,11 +124,11 @@ def build_figures():
     pmfs.legend.label_text_font_size = "5pt"
 
 
-def solver(bins, temp, distance, valency, sigma, c_0_pre, rho, eps, pmf_cat, pmf_an):
+def solver(bins, temp, distance, valency_cat, valency_an, sigma, c_0_pre, rho, eps, pmf_cat, pmf_an):
     """Run the PBE solver."""
     # convert units
     (zz_hat, kappa, c_0, beta, dz_hat, sigma_hat, rho_hat) = pbe.convert_units(
-        bins, temp, distance, valency, sigma, rho, c_0_pre)
+        bins, temp, distance, sigma, rho, c_0_pre)
 
     # compute gouy chapman solution to start with
     eps_avg = 1/np.average(eps)  # average epsilon
@@ -134,12 +136,12 @@ def solver(bins, temp, distance, valency, sigma, c_0_pre, rho, eps, pmf_cat, pmf
     omega = 2/(1 + np.sqrt(np.pi/bins))  # omega parameter for SOR
 
     # call iteration procedure
-    psi = pbe.iteration_loop(psi_start, omega, dz_hat, sigma_hat, rho_hat, eps,
-                             pmf_cat, pmf_an)
+    psi = pbe.iteration_loop(psi_start, omega, dz_hat, valency_cat, valency_an,
+                             sigma_hat, rho_hat, eps, pmf_cat, pmf_an)
     zz = np.linspace(0, distance/2, bins)  # computing z-vector
     (symm_zz, symm_psi,  # compute physical data and plot if in verbos mode
      symm_dens_n, symm_dens_p) = pbe.showData(zz, psi, pmf_an, pmf_cat, c_0, beta,
-                                              valency, sigma_hat, plot=False)
+                                              valency_cat, valency_an, sigma_hat, plot=False)
     data = {'zz': symm_zz, 'psi': symm_psi,
             'dens_n': symm_dens_n, 'dens_p': symm_dens_p}
     return data
@@ -175,7 +177,8 @@ def update_data():
     b = bins.value
     t = temp.value
     d = dist.value
-    z = valency.value
+    z_cat = valency_cat.value
+    z_an = valency_an.value
     s = sigma.value
     c = c_0.value
     r = chrg_dat.data['ys'][0]
@@ -184,7 +187,7 @@ def update_data():
     p_a = pmf_dat.data['ys'][1]
 
     # solve pbe
-    pbe_data = solver(b, t, d, z, s, c, r, e, p_c, p_a)
+    pbe_data = solver(b, t, d, z_cat, z_an, s, c, r, e, p_c, p_a)
 
     # rewrite data
     total_data.data = dict(x=pbe_data['zz']-pbe_data['zz'].max()/2, y0=pbe_data['psi'],
@@ -203,7 +206,7 @@ initialize_data()
 build_figures()
 
 # Set up layouts and add to document
-inputs = WidgetBox(start, bins, temp, dist, valency, sigma, c_0)
+inputs = WidgetBox(start, bins, temp, dist, valency_cat, valency_an, sigma, c_0)
 draw_inputs = Column(inputs, charge, epsilon, pmfs)
 pot_dens_plt = Row(potential, dens)  # make plots linked
 all_plots = layout([[draw_inputs, pot_dens_plt]])
