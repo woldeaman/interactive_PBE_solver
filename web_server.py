@@ -29,9 +29,9 @@ def initialize_widgets():
     global dist
     dist = Slider(title="Distance [nm]", value=5, start=0.1, end=10, step=0.1)
     global valency_cat
-    valency_cat = Slider(title="Ion Valency [Cations]", value=1, start=1, end=4, step=1)
+    valency_cat = Slider(title="Ion Valency [Cations]", value=1, start=1, end=2, step=1)
     global valency_an
-    valency_an = Slider(title="Ion Valency [Anions]", value=1, start=1, end=4, step=1)
+    valency_an = Slider(title="Ion Valency [Anions]", value=1, start=1, end=2, step=1)
     global sigma
     sigma = Slider(title="Surface Charge [e/nm\u00b2]", value=0, start=-5, end=5, step=0.1)
     global c_0
