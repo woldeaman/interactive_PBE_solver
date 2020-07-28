@@ -126,9 +126,11 @@ def build_figures():
 
 def solver(bins, temp, distance, valency_cat, valency_an, sigma, c_0_pre, rho, eps, pmf_cat, pmf_an):
     """Run the PBE solver."""
+    # determine maximum valency used for normalization
+    val_max = np.max([valency_cat, valency_an])
     # convert units
     (zz_hat, kappa, c_0, beta, dz_hat, sigma_hat, rho_hat) = pbe.convert_units(
-        bins, temp, distance, sigma, rho, c_0_pre)
+        bins, temp, distance, sigma, rho, val_max, c_0_pre)
 
     # compute gouy chapman solution to start with
     eps_avg = 1/np.average(eps)  # average epsilon
@@ -140,7 +142,7 @@ def solver(bins, temp, distance, valency_cat, valency_an, sigma, c_0_pre, rho, e
                              sigma_hat, rho_hat, eps, pmf_cat, pmf_an)
     zz = np.linspace(0, distance/2, bins)  # computing z-vector
     (symm_zz, symm_psi,  # compute physical data and plot if in verbos mode
-     symm_dens_n, symm_dens_p) = pbe.showData(zz, psi, pmf_an, pmf_cat, c_0, beta,
+     symm_dens_n, symm_dens_p) = pbe.showData(zz, psi, pmf_an, pmf_cat, val_max, c_0, beta,
                                               valency_cat, valency_an, sigma_hat, plot=False)
     data = {'zz': symm_zz, 'psi': symm_psi,
             'dens_n': symm_dens_n, 'dens_p': symm_dens_p}
